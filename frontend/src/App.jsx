@@ -9,61 +9,72 @@ import MyTrips from './components/MyTrips.jsx'
 import ChatBot from './components/ChatBot.jsx'
 import { getMe } from './lib/api.js'
 
-function Sidebar({ user, onLogout }) {
+function Sidebar({ user, onLogout, open, onClose }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
   const nav = [
-    { path: '/dashboard',  icon: '🏠', label: 'Dashboard' },
-    { path: '/plan',       icon: '✈️',  label: 'Plan Trip' },
-    { path: '/route',      icon: '🗺️', label: 'Route Planner' },
-    { path: '/blog',       icon: '✍️',  label: 'Blog Generator' },
-    { path: '/my-trips',   icon: '📁', label: 'My Trips' },
-    { path: '/chat',       icon: '💬', label: 'Travel Chat' },
+    { path: '/dashboard', icon: '🏠', label: 'Dashboard' },
+    { path: '/plan',      icon: '✈️',  label: 'Plan Trip' },
+    { path: '/route',     icon: '🗺️', label: 'Route Planner' },
+    { path: '/blog',      icon: '✍️',  label: 'Blog Generator' },
+    { path: '/my-trips',  icon: '📁', label: 'My Trips' },
+    { path: '/chat',      icon: '💬', label: 'Travel Chat' },
   ]
 
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) : 'U'
 
+  const goTo = (path) => {
+    navigate(path)
+    onClose()
+  }
+
   return (
-    <div className="sidebar">
-      <div className="sidebar-logo">
-        <h2>🌍 TravelAI</h2>
-        <span>AI Travel Assistant</span>
-      </div>
+    <>
+      {/* Overlay for mobile */}
+      <div className={`sidebar-overlay ${open ? 'open' : ''}`} onClick={onClose} />
 
-      <nav className="sidebar-nav">
-        <div className="nav-section-label">Navigation</div>
-        {nav.map(item => (
-          <button
-            key={item.path}
-            className={`nav-item ${pathname === item.path ? 'active' : ''}`}
-            onClick={() => navigate(item.path)}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </nav>
-
-      <div className="sidebar-bottom">
-        <div className="user-chip">
-          <div className="user-avatar">{initials}</div>
-          <div>
-            <div className="user-name">{user?.name || 'Traveller'}</div>
-            <div className="user-email">{user?.travel_style || 'mid'} budget</div>
-          </div>
+      <div className={`sidebar ${open ? 'open' : ''}`}>
+        <div className="sidebar-logo">
+          <h2>🌍 TravelAI</h2>
+          <span>AI Travel Assistant</span>
         </div>
-        <button className="btn btn-outline btn-sm" style={{width:'100%'}} onClick={onLogout}>
-          Logout
-        </button>
+
+        <nav className="sidebar-nav">
+          <div className="nav-section-label">Navigation</div>
+          {nav.map(item => (
+            <button
+              key={item.path}
+              className={`nav-item ${pathname === item.path ? 'active' : ''}`}
+              onClick={() => goTo(item.path)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-bottom">
+          <div className="user-chip">
+            <div className="user-avatar">{initials}</div>
+            <div>
+              <div className="user-name">{user?.name || 'Traveller'}</div>
+              <div className="user-email">{user?.travel_style || 'mid'} budget</div>
+            </div>
+          </div>
+          <button className="btn btn-outline btn-sm" style={{width:'100%'}} onClick={onLogout}>
+            Logout
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('travel_token')
@@ -99,7 +110,21 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar user={user} onLogout={handleLogout} />
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <span className="mobile-topbar-logo">🌍 TravelAI</span>
+        <button className="hamburger" onClick={() => setSidebarOpen(o => !o)}>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+
+      <Sidebar
+        user={user}
+        onLogout={handleLogout}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
       <div className="main-content">
         <Routes>
           <Route path="/"          element={<Navigate to="/dashboard" replace />} />

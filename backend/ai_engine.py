@@ -12,13 +12,21 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 USE_GEMINI = bool(GEMINI_API_KEY)
 
-if USE_GEMINI:
-    import google.generativeai as genai
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-else:
-    import anthropic
-    claude_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+_gemini_client = None
+_claude_client = None
+
+def _get_client():
+    global _gemini_client, _claude_client
+    if USE_GEMINI:
+        if _gemini_client is None:
+            from google import genai
+            _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+        return _gemini_client
+    else:
+        if _claude_client is None:
+            import anthropic
+            _claude_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        return _claude_client
 
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
@@ -101,12 +109,16 @@ def _extract_json(text: str) -> dict:
 
 def _call_ai(system: str, user_prompt: str, max_tokens: int = 4096) -> str:
     """Call whichever AI is configured — Gemini or Claude"""
+    client = _get_client()
     if USE_GEMINI:
         full_prompt = f"{system}\n\n{user_prompt}"
-        response = gemini_model.generate_content(full_prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=full_prompt
+        )
         return response.text
     else:
-        response = claude_client.messages.create(
+        response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=max_tokens,
             messages=[{"role": "user", "content": user_prompt}],
