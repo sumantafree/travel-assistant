@@ -113,7 +113,7 @@ def _call_ai(system: str, user_prompt: str, max_tokens: int = 4096) -> str:
     if USE_GEMINI:
         full_prompt = f"{system}\n\n{user_prompt}"
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=full_prompt
         )
         return response.text
